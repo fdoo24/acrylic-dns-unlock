@@ -1,0 +1,36 @@
+# Gemini & Google
+||google.com^$dnsrewrite=179.254.143.17
+||gemini.google.com^$dnsrewrite=179.254.143.17
+||alkalimeta.google^$dnsrewrite=179.254.143.17
+||generativelanguage.googleapis.com^$dnsrewrite=179.254.143.17
+||googleapis.com^$dnsrewrite=179.254.143.17
+||deepmind.com^$dnsrewrite=179.254.143.17
+||deepmind.google^$dnsrewrite=179.254.143.17
+||notebooklm.google^$dnsrewrite=179.254.143.17
+||bard.google.com^$dnsrewrite=179.254.143.17
+||aistudio.google.com^$dnsrewrite=179.254.143.17
+||gstatic.com^$dnsrewrite=179.254.143.17
+||googleusercontent.com^$dnsrewrite=179.254.143.17
+||waa-pa.clients6.google.com^$dnsrewrite=179.254.143.17
+
+# OpenAI & Anthropic
+||openai.com^$dnsrewrite=179.254.143.17
+||chatgpt.com^$dnsrewrite=179.254.143.17
+||oaistatic.com^$dnsrewrite=179.254.143.17
+||oaiusercontent.com^$dnsrewrite=179.254.143.17
+||sora.com^$dnsrewrite=179.254.143.17
+||anthropic.com^$dnsrewrite=179.254.143.17
+||claude.ai^$dnsrewrite=179.254.143.17
+||claudeusercontent.com^$dnsrewrite=179.254.143.17
+
+# Spotify
+||spotify.com^$dnsrewrite=179.254.143.17
+||scdn.co^$dnsrewrite=179.254.143.17
+||spotifycdn.com^$dnsrewrite=179.254.143.17
+||spotifycdn.net^$dnsrewrite=179.254.143.17
+||audio-ak-spotify-com.akamaized.net^$dnsrewrite=179.254.143.17
+||audio4-ak-spotify-com.akamaized.net^$dnsrewrite=179.254.143.17
+||heads-ak-spotify-com.akamaized.net^$dnsrewrite=179.254.143.17
+||heads4-ak-spotify-com.akamaized.net^$dnsrewrite=179.254.143.17
+||pscdn.co^$dnsrewrite=179.254.143.17
+||spoti.fi^$dnsrewrite=179.254.143.17
