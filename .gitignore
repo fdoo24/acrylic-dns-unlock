@@ -1,0 +1,4 @@
+# Local install artifacts / backups
+acrylic-backup.json
+*.log
+AcrylicDNS/
