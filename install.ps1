@@ -163,24 +163,45 @@ if (-not $svc -or $svc.Status -ne 'Running') {
 Set-Service -Name 'AcrylicDNSProxySvc' -StartupType Automatic
 Write-Host 'Service AcrylicDNSProxySvc: Running (Automatic)' -ForegroundColor Green
 
-# --- point adapter DNS at Acrylic -------------------------------------------
-Set-DnsClientServerAddress -InterfaceIndex $ifIndex -ServerAddresses ('127.0.0.1', '::1')
+# --- point adapter DNS at Acrylic on ALL physical adapters (Ethernet + Wi-Fi) ---
+# This prevents the "switched to Wi-Fi / hotspot" problem where only one adapter was set.
+$allAdapters = Get-NetIPConfiguration |
+  Where-Object { $_.NetAdapter.Status -eq 'Up' -and
+                 $_.NetAdapter.InterfaceDescription -notmatch 'Loopback|Virtual|Hyper-V|VPN|TAP|Tunnel' }
+foreach ($a in $allAdapters) {
+  Set-DnsClientServerAddress -InterfaceIndex $a.InterfaceIndex -ServerAddresses ('127.0.0.1', '::1') -ErrorAction SilentlyContinue
+  Write-Host "Adapter DNS set to 127.0.0.1 / ::1  [$($a.NetAdapter.Name)]"
+}
 ipconfig /flushdns | Out-Null
-Write-Host "Adapter DNS set to 127.0.0.1 / ::1"
 
-# --- verify -----------------------------------------------------------------
+# --- verify (both via Acrylic and system-wide) ------------------------------
 Start-Sleep -Seconds 1
-$ok = $false
+$okAcrylic = $false
+$okSystem  = $false
 try {
   $r = Resolve-DnsName -Name $TestDomain -Server 127.0.0.1 -Type A -ErrorAction Stop |
        Where-Object { $_.IPAddress } | Select-Object -First 1
-  if ($r -and $r.IPAddress -eq $ExitIP) { $ok = $true }
-  Write-Host "Verify: $TestDomain -> $($r.IPAddress) (expected $ExitIP)"
-} catch { Write-Host "Verify failed: $_" -ForegroundColor Yellow }
+  if ($r -and $r.IPAddress -eq $ExitIP) { $okAcrylic = $true }
+  Write-Host "Verify via Acrylic : $TestDomain -> $($r.IPAddress) (expected $ExitIP)"
+} catch { Write-Host "Verify (Acrylic) failed: $_" -ForegroundColor Yellow }
+
+try {
+  $s = Resolve-DnsName -Name $TestDomain -Type A -ErrorAction Stop |
+       Where-Object { $_.IPAddress } | Select-Object -First 1
+  if ($s -and $s.IPAddress -eq $ExitIP) { $okSystem = $true }
+  Write-Host "Verify via System  : $TestDomain -> $($s.IPAddress) (expected $ExitIP)"
+} catch { Write-Host "Verify (System) failed: $_" -ForegroundColor Yellow }
 
 Write-Host ''
-if ($ok) { Write-Host 'SUCCESS: DNS-redirect is active.' -ForegroundColor Green }
-else { Write-Host 'Installed, but verification did not match. Check exit IP / upstream.' -ForegroundColor Yellow }
+if ($okAcrylic -and $okSystem) {
+  Write-Host 'SUCCESS: DNS-redirect is fully active.' -ForegroundColor Green
+} elseif ($okAcrylic -and -not $okSystem) {
+  Write-Host 'PARTIAL: Acrylic works, but system DNS bypasses it on some adapter.' -ForegroundColor Yellow
+  Write-Host '         Run diagnose.ps1 -Fix to repair.' -ForegroundColor Yellow
+} else {
+  Write-Host 'Installed, but verification did not match. Check exit IP / upstream.' -ForegroundColor Yellow
+}
 Write-Host "Install dir : $InstallDir"
+Write-Host "Diagnose    : run diagnose.ps1 (or diagnose.ps1 -Fix) if anything stops working."
 Write-Host "Recovery    : run restore-dns.ps1 (returns DNS to DHCP/router) if anything breaks."
 Write-Host "Change exit : run update-ip.ps1 -NewIP <ip>"

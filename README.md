@@ -14,6 +14,22 @@ locally so any PC on the LAN works without per-device VPN.
 
 ---
 
+## Interactive Menu (Recommended)
+
+Run the interactive control menu — one place for installation, diagnosis, auto-fixing, IP updates, and uninstall:
+
+```powershell
+.\menu.ps1
+```
+
+Or run remotely without cloning:
+
+```powershell
+irm https://raw.githubusercontent.com/fdoo24/acrylic-dns-unlock/main/menu.ps1 | iex
+```
+
+---
+
 ## Install (one command)
 
 Open **PowerShell** (any window — the script self-elevates via UAC) and run:
@@ -37,8 +53,8 @@ The installer:
 4. Writes `AcrylicConfiguration.ini` (upstream = router, bind `127.0.0.1` / `::1`).
 5. Generates wildcard hosts (`IP >domain` = `domain` + `*.domain`) from `domains.txt`.
 6. Installs + starts the `AcrylicDNSProxySvc` service (Automatic).
-7. Points the adapter DNS at `127.0.0.1` / `::1`, flushes cache.
-8. Verifies `gemini.google.com` resolves to the exit IP.
+7. Points active physical network adapters (Ethernet + Wi-Fi) at `127.0.0.1` / `::1`, flushes cache.
+8. Verifies resolution via both Acrylic and system-wide resolver.
 
 ### Options
 
@@ -52,6 +68,36 @@ The installer:
 | `-UpstreamDNS` | auto | DNS for all non-rewritten queries (router/ISP). |
 | `-InstallDir` | `%LOCALAPPDATA%\AcrylicDNS` | Install location. |
 | `-TestDomain` | `gemini.google.com` | Domain used for the post-install check. |
+
+---
+
+## Self-Diagnosis & Auto-Fix
+
+If AI services stop opening, regular websites hang, or Windows shows the "globe" icon (No Internet) after switching networks (Ethernet ↔ Wi-Fi ↔ Mobile Hotspot):
+
+```powershell
+# Check what is broken across 7 layers:
+.\diagnose.ps1
+
+# Diagnose AND automatically fix any issues (adapter DNS, dead upstream, stopped service):
+.\diagnose.ps1 -Fix
+```
+
+Or remotely:
+
+```powershell
+# Quick diagnosis
+irm https://raw.githubusercontent.com/fdoo24/acrylic-dns-unlock/main/diagnose.ps1 | iex
+```
+
+The diagnostic tool checks:
+1. **Service status**: Is `AcrylicDNSProxySvc` running and set to Automatic?
+2. **Active Adapter**: Is the currently connected adapter pointing to `127.0.0.1`?
+3. **Upstream DNS**: Is the configured upstream DNS reachable from the current network?
+4. **AI Redirect**: Does Acrylic resolve `gemini.google.com` to the exit IP?
+5. **Normal Sites**: Does Acrylic successfully resolve standard sites (`ya.ru`) via upstream?
+6. **System Resolution**: Does Windows system DNS (as seen by browsers) match the redirect?
+7. **Exit IP Reachability**: Is TCP port 443 reachable on the remote exit IP?
 
 ---
 
@@ -108,8 +154,10 @@ Get-Service AcrylicDNSProxySvc                        # Running / Automatic
 ssh fd@192.168.0.127                                  # LAN still works
 ```
 
-## Gotchas
+## Gotchas & Network Switching
 
+- **Switching Networks (Wi-Fi / Mobile Hotspot)**:
+  When switching from Ethernet to Wi-Fi or a phone hotspot, the new adapter might get its DNS from DHCP, or the previous upstream DNS (router IP like `192.168.1.1`) might become unreachable. Run `.\diagnose.ps1 -Fix` to instantly bind the current adapter to `127.0.0.1` and fix upstream DNS.
 - **IPv6 bypass**: if the adapter has a global IPv6 address and a foreign IPv6 DNS, queries
   can skip Acrylic. The installer binds `::1` too; remove foreign IPv6 DNS if needed.
 - **HTTP/2 coalescing (421)**: browsers may reuse a connection across rewritten domains that
