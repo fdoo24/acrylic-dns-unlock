@@ -82,13 +82,18 @@ while ($true) {
   Write-Host '║  4. Update exit IP                         ║' -ForegroundColor Cyan
   Write-Host '║  5. Restore DNS (emergency - no Acrylic)   ║' -ForegroundColor Cyan
   Write-Host '║  6. Uninstall (remove everything)          ║' -ForegroundColor Cyan
-  Write-Host '║  7. Exit                                   ║' -ForegroundColor Cyan
+  # show auto-switch status inline in the menu
+  $asTask = Get-ScheduledTask -TaskName 'AcrylicDNS-AutoSwitch' -ErrorAction SilentlyContinue
+  $asIcon  = if ($asTask) { '[ON] ' } else { '[OFF]' }
+  $asColor = if ($asTask) { 'Green' } else { 'DarkGray' }
+  Write-Host "║  7. Auto-Switch on network change  $asIcon  ║" -ForegroundColor $asColor
+  Write-Host '║  8. Exit                                   ║' -ForegroundColor Cyan
   Write-Host '║                                            ║' -ForegroundColor Cyan
   Write-Host '╚════════════════════════════════════════════╝' -ForegroundColor Cyan
 
   Get-QuickStatus
 
-  $choice = Read-Host 'Choose option (1-7)'
+  $choice = Read-Host 'Choose option (1-8)'
 
   switch ($choice.Trim()) {
 
@@ -149,10 +154,33 @@ while ($true) {
       Write-Host '' ; Read-Host 'Press Enter to return to menu'
     }
 
-    '7' { Write-Host 'Bye!' -ForegroundColor Cyan ; break }
+    '7' {
+      Write-Host '' ; Write-Host 'Auto-Switch on network change' -ForegroundColor Cyan
+      $asTask = Get-ScheduledTask -TaskName 'AcrylicDNS-AutoSwitch' -ErrorAction SilentlyContinue
+      if ($asTask) {
+        Write-Host "  Current state: ENABLED (task exists)" -ForegroundColor Green
+        $sub = Read-Host "  Press D to disable, S to show status, or Enter to cancel"
+        if ($sub.Trim().ToUpper() -eq 'D') {
+          Run-Script 'autoswitch' @('-Disable', '-InstallDir', $InstallDir)
+        } elseif ($sub.Trim().ToUpper() -eq 'S') {
+          Run-Script 'autoswitch' @('-Status', '-InstallDir', $InstallDir)
+        }
+      } else {
+        Write-Host "  Current state: DISABLED (task not found)" -ForegroundColor Yellow
+        Write-Host "  When enabled: every network switch (Ethernet/Wi-Fi/hotspot)"
+        Write-Host "  silently triggers diagnose.ps1 -Fix after 5 seconds."
+        $sub = Read-Host "  Press E to enable or Enter to cancel"
+        if ($sub.Trim().ToUpper() -eq 'E') {
+          Run-Script 'autoswitch' @('-Enable', '-InstallDir', $InstallDir, '-ScriptDir', $ScriptDir)
+        }
+      }
+      Write-Host '' ; Read-Host 'Press Enter to return to menu'
+    }
+
+    '8' { Write-Host 'Bye!' -ForegroundColor Cyan ; break }
 
     default { Write-Host 'Invalid choice, try again.' -ForegroundColor DarkGray ; Start-Sleep -Seconds 1 }
   }
 
-  if ($choice.Trim() -eq '7') { break }
+  if ($choice.Trim() -eq '8') { break }
 }

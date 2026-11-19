@@ -16,7 +16,7 @@ locally so any PC on the LAN works without per-device VPN.
 
 ## Interactive Menu (Recommended)
 
-Run the interactive control menu — one place for installation, diagnosis, auto-fixing, IP updates, and uninstall:
+Run the interactive control menu — one place for installation, diagnosis, auto-fixing, auto-switch management, IP updates, and uninstall:
 
 ```powershell
 .\menu.ps1
@@ -46,6 +46,12 @@ cd acrylic-dns-unlock
 .\install.ps1
 ```
 
+To enable background auto-switching right from the start:
+
+```powershell
+.\install.ps1 -EnableAutoSwitch
+```
+
 The installer:
 1. Downloads Acrylic + `domains.txt` (or uses the local clone's copies).
 2. Auto-detects the active adapter and its current DNS → uses it as upstream.
@@ -55,11 +61,12 @@ The installer:
 6. Installs + starts the `AcrylicDNSProxySvc` service (Automatic).
 7. Points active physical network adapters (Ethernet + Wi-Fi) at `127.0.0.1` / `::1`, flushes cache.
 8. Verifies resolution via both Acrylic and system-wide resolver.
+9. (Optional) Registers the Auto-Switch Task Scheduler task if `-EnableAutoSwitch` is specified.
 
 ### Options
 
 ```powershell
-.\install.ps1 -ExitIP 1.2.3.4 -UpstreamDNS 192.168.1.1 -InstallDir D:\AcrylicDNS
+.\install.ps1 -ExitIP 1.2.3.4 -UpstreamDNS 192.168.1.1 -InstallDir D:\AcrylicDNS -EnableAutoSwitch
 ```
 
 | Param | Default | Meaning |
@@ -68,6 +75,26 @@ The installer:
 | `-UpstreamDNS` | auto | DNS for all non-rewritten queries (router/ISP). |
 | `-InstallDir` | `%LOCALAPPDATA%\AcrylicDNS` | Install location. |
 | `-TestDomain` | `gemini.google.com` | Domain used for the post-install check. |
+| `-EnableAutoSwitch` | `$false` | Automatically configure Task Scheduler to heal DNS on network changes. |
+
+---
+
+## Auto-Switch on Network Change (Autopilot)
+
+Never worry about switching between Ethernet, Wi-Fi, and mobile hotspots again. A Windows Task Scheduler task triggers 5 seconds after connection (`Microsoft-Windows-NetworkProfile` Event ID `10000`) and silently runs `diagnose.ps1 -Fix` as `SYSTEM`:
+
+```powershell
+# Enable background auto-switch:
+.\autoswitch.ps1 -Enable
+
+# Check current status:
+.\autoswitch.ps1 -Status
+
+# Disable background auto-switch:
+.\autoswitch.ps1 -Disable
+```
+
+You can also toggle this easily inside `.\menu.ps1` (Option 7).
 
 ---
 
@@ -157,7 +184,7 @@ ssh fd@192.168.0.127                                  # LAN still works
 ## Gotchas & Network Switching
 
 - **Switching Networks (Wi-Fi / Mobile Hotspot)**:
-  When switching from Ethernet to Wi-Fi or a phone hotspot, the new adapter might get its DNS from DHCP, or the previous upstream DNS (router IP like `192.168.1.1`) might become unreachable. Run `.\diagnose.ps1 -Fix` to instantly bind the current adapter to `127.0.0.1` and fix upstream DNS.
+  When switching from Ethernet to Wi-Fi or a phone hotspot, the new adapter might get its DNS from DHCP, or the previous upstream DNS (router IP like `192.168.1.1`) might become unreachable. Use `.\autoswitch.ps1 -Enable` for automatic resolution, or manually run `.\diagnose.ps1 -Fix`.
 - **IPv6 bypass**: if the adapter has a global IPv6 address and a foreign IPv6 DNS, queries
   can skip Acrylic. The installer binds `::1` too; remove foreign IPv6 DNS if needed.
 - **HTTP/2 coalescing (421)**: browsers may reuse a connection across rewritten domains that

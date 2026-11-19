@@ -22,17 +22,24 @@
 .PARAMETER RepoBase
   Raw GitHub base used to download assets when not running from a local clone.
 
+.PARAMETER EnableAutoSwitch
+  After install, register a Task Scheduler task that auto-runs diagnose.ps1 -Fix
+  whenever Windows connects to any network. Fixes DNS on adapter changes automatically.
+
 .EXAMPLE
   .\install.ps1
 .EXAMPLE
   .\install.ps1 -ExitIP 1.2.3.4 -UpstreamDNS 192.168.1.1
+.EXAMPLE
+  .\install.ps1 -EnableAutoSwitch
 #>
 param(
   [string]$ExitIP = '179.254.143.17',
   [string]$UpstreamDNS = '',
   [string]$InstallDir = "$env:LOCALAPPDATA\AcrylicDNS",
   [string]$RepoBase = 'https://raw.githubusercontent.com/fdoo24/acrylic-dns-unlock/main',
-  [string]$TestDomain = 'gemini.google.com'
+  [string]$TestDomain = 'gemini.google.com',
+  [switch]$EnableAutoSwitch
 )
 $ErrorActionPreference = 'Stop'
 
@@ -51,6 +58,7 @@ if (-not (Test-Admin)) {
          '-ExitIP', $ExitIP, '-InstallDir', $InstallDir, '-RepoBase', $RepoBase,
          '-TestDomain', $TestDomain)
   if ($UpstreamDNS) { $a += @('-UpstreamDNS', $UpstreamDNS) }
+  if ($EnableAutoSwitch) { $a += '-EnableAutoSwitch' }
   Write-Host 'Requesting elevation (UAC)... continuation in the new window.'
   Start-Process powershell -Verb RunAs -ArgumentList $a
   return
@@ -205,3 +213,16 @@ Write-Host "Install dir : $InstallDir"
 Write-Host "Diagnose    : run diagnose.ps1 (or diagnose.ps1 -Fix) if anything stops working."
 Write-Host "Recovery    : run restore-dns.ps1 (returns DNS to DHCP/router) if anything breaks."
 Write-Host "Change exit : run update-ip.ps1 -NewIP <ip>"
+
+# --- auto-switch task registration (if requested) ---------------------------
+if ($EnableAutoSwitch) {
+  Write-Host ''
+  $autoSwitchScript = Join-Path $PSScriptRoot 'autoswitch.ps1'
+  if (Test-Path $autoSwitchScript) {
+    & $autoSwitchScript -Enable -InstallDir $InstallDir -ScriptDir $PSScriptRoot
+  } else {
+    $tmpAs = Join-Path $env:TEMP 'acrylic-dns-unlock-autoswitch.ps1'
+    Invoke-WebRequest -UseBasicParsing "$RepoBase/autoswitch.ps1" -OutFile $tmpAs
+    & $tmpAs -Enable -InstallDir $InstallDir -ScriptDir $InstallDir
+  }
+}
