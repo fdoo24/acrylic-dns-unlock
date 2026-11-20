@@ -276,10 +276,13 @@ if ($Fix) {
     # First try gateway as upstream (more local, better for some ISPs)
     $newUpstream  = '77.88.8.8'
     $newUpstream2 = '8.8.8.8'
-    # If gateway is reachable, prefer it
+    # If gateway is reachable, use gateway for both to prevent secondary timeouts on mobile carriers
     if ($gateway -and $gateway -ne '(none)') {
-      $gwPing = Test-Connection -ComputerName $gateway -Count 1 -Quiet -ErrorAction SilentlyContinue
-      if ($gwPing) { $newUpstream = $gateway; $newUpstream2 = '77.88.8.8' }
+      $gwOk = Test-Connection -ComputerName $gateway -Count 1 -Quiet -ErrorAction SilentlyContinue
+      if (-not $gwOk) {
+        $gwOk = [bool](Resolve-DnsName -Name 'ya.ru' -Server $gateway -QuickTimeout -ErrorAction SilentlyContinue)
+      }
+      if ($gwOk) { $newUpstream = $gateway; $newUpstream2 = $gateway }
     }
     Write-Host "  Upstream unreachable. Switching to $newUpstream / $newUpstream2..."
     $ini = Get-Content $iniPath -Raw
