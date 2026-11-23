@@ -31,7 +31,14 @@ param(
 )
 
 $TaskName = 'AcrylicDNS-AutoUpdate'
-$ErrorActionPreference = 'Continue'
+$ErrorActionPreference = 'Stop'
+
+if (-not $ScriptDir) {
+  $ScriptDir = if ($PSScriptRoot) { $PSScriptRoot }
+               elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath }
+               elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path }
+               else { (Get-Location).Path }
+}
 
 function Test-Admin {
   $id = [Security.Principal.WindowsIdentity]::GetCurrent()
