@@ -5,8 +5,8 @@ remote **SNI exit IP** using a local DNS rewrite — **no VPN, no proxy, no TUN 
 Everything else (LAN, local/RU sites) keeps going to your normal router DNS.
 
 Built on [Acrylic DNS Proxy](https://mayakron.altervista.org/acrylic.htm) (portable, GPL),
-installed as a Windows service. Inspired by an AdGuard Home `dnsrewrite` setup, reproduced
-locally so any PC on the LAN works without per-device VPN.
+installed as a Windows service. Companion server component: [smart-dns-server](https://github.com/fdoo24/smart-dns-server).
+Inspired by an AdGuard Home `dnsrewrite` setup, reproduced locally so any PC on the LAN works without per-device VPN.
 
 > How it works: AI domains are resolved to the exit IP (a reverse SNI proxy abroad that
 > forwards to the real services with valid certs). The client just needs DNS pointing those
@@ -95,6 +95,25 @@ Never worry about switching between Ethernet, Wi-Fi, and mobile hotspots again. 
 ```
 
 You can also toggle this easily inside `.\menu.ps1` (Option 7).
+
+---
+
+## Hourly Domain Auto-Update (Autopilot)
+
+Automatically sync newly added AI domains from your GitHub Gist every hour without touching the PC. Runs silently in the background via Windows Task Scheduler with 0% CPU impact (skips service restarts if domains haven't changed):
+
+```powershell
+# Enable hourly domain auto-update:
+.\autoupdate.ps1 -Enable
+
+# Check current status:
+.\autoupdate.ps1 -Status
+
+# Disable hourly auto-update:
+.\autoupdate.ps1 -Disable
+```
+
+You can also toggle this inside `.\menu.ps1` (Option 8).
 
 ---
 
