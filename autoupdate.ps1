@@ -20,13 +20,14 @@
 .PARAMETER IntervalHours
   How often to check for updates (default: 1 hour).
 #>
+[CmdletBinding()]
 param(
   [switch]$Enable,
   [switch]$Disable,
   [switch]$Status,
-  [int]$IntervalHours = 1,
   [string]$InstallDir = "$env:LOCALAPPDATA\AcrylicDNS",
-  [string]$ScriptDir  = $PSScriptRoot
+  [string]$ScriptDir  = $PSScriptRoot,
+  [int]$IntervalHours = 1
 )
 
 $TaskName = 'AcrylicDNS-AutoUpdate'
