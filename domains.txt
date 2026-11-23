@@ -34,3 +34,6 @@
 ||heads4-ak-spotify-com.akamaized.net^$dnsrewrite=179.254.143.17
 ||pscdn.co^$dnsrewrite=179.254.143.17
 ||spoti.fi^$dnsrewrite=179.254.143.17
+
+# OpenRouter
+||openrouter.ai^$dnsrewrite=179.254.143.17

@@ -119,12 +119,20 @@ while ($true) {
     }
 
     '4' {
-      Write-Host '' ; Write-Host 'Update exit IP' -ForegroundColor Yellow
-      $ip = Read-Host 'New exit IP (e.g. 1.2.3.4)'
-      if (-not $ip.Trim()) {
-        Write-Host 'No IP entered, cancelled.' -ForegroundColor DarkGray
+      Write-Host '' ; Write-Host 'Update IP or Refresh Domains' -ForegroundColor Yellow
+      Write-Host '  1. Refresh domains from Gist (auto)'
+      Write-Host '  2. Enter new Exit IP'
+      $sub = Read-Host 'Choose (1-2, default 1)'
+      if ($sub.Trim() -eq '2') {
+        $ip = Read-Host 'New exit IP (e.g. 1.2.3.4)'
+        if (-not $ip.Trim()) {
+          Write-Host 'No IP entered, cancelled.' -ForegroundColor DarkGray
+        } else {
+          Run-Script 'update-ip' @('-NewIP', $ip.Trim(), '-InstallDir', $InstallDir)
+        }
       } else {
-        Run-Script 'update-ip' @('-NewIP', $ip.Trim(), '-InstallDir', $InstallDir)
+        Write-Host 'Refreshing domains from Gist...' -ForegroundColor Cyan
+        Run-Script 'update-ip' @('-RefreshDomains', '-InstallDir', $InstallDir)
       }
       Write-Host '' ; Read-Host 'Press Enter to return to menu'
     }

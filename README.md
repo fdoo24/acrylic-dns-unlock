@@ -143,9 +143,14 @@ Uses `acrylic-backup.json` when present, otherwise resets every adapter pointing
 ## Change the exit IP / refresh domains
 
 ```powershell
+# Change exit IP:
 .\update-ip.ps1 -NewIP 1.2.3.4
-# or regenerate from your AdGuard gist:
-.\update-ip.ps1 -DomainsUrl https://gist.githubusercontent.com/<you>/<id>/raw/domains.txt
+
+# Refresh domains from the official Gist (auto):
+.\update-ip.ps1 -RefreshDomains
+
+# Or regenerate from a custom URL:
+.\update-ip.ps1 -DomainsUrl https://gist.githubusercontent.com/.../raw/domains.txt
 ```
 
 ## Uninstall
@@ -204,9 +209,7 @@ OpenRouter / Gemini directly without the dead xray tunnel.
   point `/etc/resolv.conf` (or the bot's resolver) at `127.0.0.1`.
 - **CoreDNS** alternative: `template` / `rewrite` plugin mapping AI domains to the exit IP,
   `forward . <upstream>`.
-- **OpenRouter**: add `openrouter.ai` (and `*.openrouter.ai`) to the exit's SNI-proxy config
-  **and** to the domain list — it is not in the current gist. Then set bot `cfg.proxy=""`
-  (direct) and let DNS do the routing.
+- **OpenRouter**: `openrouter.ai` (and `*.openrouter.ai`) is included in `domains.txt` and routes via the exit's SNI-proxy. Set bot `cfg.proxy=""` (direct) and let DNS do the routing.
 - Keep production untouched until explicitly approved; test in the sandbox first.
 
 ## License

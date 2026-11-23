@@ -13,15 +13,23 @@
 .EXAMPLE
   .\update-ip.ps1 -NewIP 1.2.3.4
 .EXAMPLE
+  .\update-ip.ps1 -RefreshDomains
+.EXAMPLE
   .\update-ip.ps1 -DomainsUrl https://gist.githubusercontent.com/.../domains.txt
 #>
 param(
   [string]$NewIP = '',
   [string]$DomainsUrl = '',
+  [switch]$RefreshDomains,
   [string]$InstallDir = "$env:LOCALAPPDATA\AcrylicDNS",
-  [string]$RepoBase = 'https://raw.githubusercontent.com/fdoo24/acrylic-dns-unlock/main'
+  [string]$RepoBase = 'https://raw.githubusercontent.com/fdoo24/acrylic-dns-unlock/main',
+  [string]$DefaultGistUrl = 'https://gist.githubusercontent.com/fd25-cyber/06084693e9c14ed6accc0c8e165c2fbf/raw/domains.txt'
 )
 $ErrorActionPreference = 'Stop'
+
+if ($RefreshDomains -and -not $DomainsUrl) {
+  $DomainsUrl = $DefaultGistUrl
+}
 
 function Test-Admin {
   $id = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -36,6 +44,7 @@ if (-not (Test-Admin)) {
          '-InstallDir', $InstallDir, '-RepoBase', $RepoBase)
   if ($NewIP) { $a += @('-NewIP', $NewIP) }
   if ($DomainsUrl) { $a += @('-DomainsUrl', $DomainsUrl) }
+  if ($RefreshDomains) { $a += '-RefreshDomains' }
   Start-Process powershell -Verb RunAs -ArgumentList $a
   Write-Host 'Requesting elevation (UAC)...'
   return
@@ -43,7 +52,7 @@ if (-not (Test-Admin)) {
 
 $hostsPath = Join-Path $InstallDir 'AcrylicHosts.txt'
 if (-not (Test-Path $hostsPath)) { throw "AcrylicHosts.txt not found in $InstallDir. Run install.ps1 first." }
-if (-not $NewIP -and -not $DomainsUrl) { throw 'Pass -NewIP <ip> or -DomainsUrl <url>.' }
+if (-not $NewIP -and -not $DomainsUrl) { throw 'Pass -NewIP <ip>, -DomainsUrl <url>, or -RefreshDomains.' }
 
 function Write-Utf8NoBom([string]$Path, [string]$Text) {
   [IO.File]::WriteAllText($Path, $Text, (New-Object Text.UTF8Encoding $false))
