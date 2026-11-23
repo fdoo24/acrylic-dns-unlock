@@ -87,13 +87,20 @@ while ($true) {
   $asIcon  = if ($asTask) { '[ON] ' } else { '[OFF]' }
   $asColor = if ($asTask) { 'Green' } else { 'DarkGray' }
   Write-Host "║  7. Auto-Switch on network change  $asIcon  ║" -ForegroundColor $asColor
-  Write-Host '║  8. Exit                                   ║' -ForegroundColor Cyan
+
+  # show auto-update status inline in the menu
+  $auTask = Get-ScheduledTask -TaskName 'AcrylicDNS-AutoUpdate' -ErrorAction SilentlyContinue
+  $auIcon  = if ($auTask) { '[ON] ' } else { '[OFF]' }
+  $auColor = if ($auTask) { 'Green' } else { 'DarkGray' }
+  Write-Host "║  8. Auto-Update domains every hour $auIcon  ║" -ForegroundColor $auColor
+
+  Write-Host '║  9. Exit                                   ║' -ForegroundColor Cyan
   Write-Host '║                                            ║' -ForegroundColor Cyan
   Write-Host '╚════════════════════════════════════════════╝' -ForegroundColor Cyan
 
   Get-QuickStatus
 
-  $choice = Read-Host 'Choose option (1-8)'
+  $choice = Read-Host 'Choose option (1-9)'
 
   switch ($choice.Trim()) {
 
@@ -185,10 +192,33 @@ while ($true) {
       Write-Host '' ; Read-Host 'Press Enter to return to menu'
     }
 
-    '8' { Write-Host 'Bye!' -ForegroundColor Cyan ; break }
+    '8' {
+      Write-Host '' ; Write-Host 'Auto-Update domains every hour' -ForegroundColor Cyan
+      $auTask = Get-ScheduledTask -TaskName 'AcrylicDNS-AutoUpdate' -ErrorAction SilentlyContinue
+      if ($auTask) {
+        Write-Host "  Current state: ENABLED (task exists)" -ForegroundColor Green
+        $sub = Read-Host "  Press D to disable, S to show status, or Enter to cancel"
+        if ($sub.Trim().ToUpper() -eq 'D') {
+          Run-Script 'autoupdate' @('-Disable', '-InstallDir', $InstallDir)
+        } elseif ($sub.Trim().ToUpper() -eq 'S') {
+          Run-Script 'autoupdate' @('-Status', '-InstallDir', $InstallDir)
+        }
+      } else {
+        Write-Host "  Current state: DISABLED (task not found)" -ForegroundColor Yellow
+        Write-Host "  When enabled: checks Gist every 1 hour silently."
+        Write-Host "  If changed, updates AcrylicHosts.txt without downtime."
+        $sub = Read-Host "  Press E to enable or Enter to cancel"
+        if ($sub.Trim().ToUpper() -eq 'E') {
+          Run-Script 'autoupdate' @('-Enable', '-InstallDir', $InstallDir, '-ScriptDir', $ScriptDir)
+        }
+      }
+      Write-Host '' ; Read-Host 'Press Enter to return to menu'
+    }
+
+    '9' { Write-Host 'Bye!' -ForegroundColor Cyan ; break }
 
     default { Write-Host 'Invalid choice, try again.' -ForegroundColor DarkGray ; Start-Sleep -Seconds 1 }
   }
 
-  if ($choice.Trim() -eq '8') { break }
+  if ($choice.Trim() -eq '9') { break }
 }

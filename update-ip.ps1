@@ -76,7 +76,13 @@ if ($DomainsUrl) {
     '::1 localhost localhost.localdomain',
     ''
   )
-  Write-Utf8NoBom $hostsPath (($header + $rules) -join "`r`n")
+  $newContent = ($header + $rules) -join "`r`n"
+  $oldContent = if (Test-Path $hostsPath) { Get-Content $hostsPath -Raw } else { '' }
+  if ($newContent.Trim() -eq $oldContent.Trim()) {
+    Write-Host "Domains are already up-to-date ($($rules.Count) rules). No restart needed." -ForegroundColor Green
+    return
+  }
+  Write-Utf8NoBom $hostsPath $newContent
   Write-Host "Regenerated $($rules.Count) rules."
 } else {
   $lines = Get-Content $hostsPath
